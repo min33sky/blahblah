@@ -22,6 +22,9 @@ export default function useFirebaseAuth() {
         provider
       );
 
+      /**
+       *? 로그인 정보를 Storage에 저장한다.
+       */
       if (signInResult.user) {
         console.info(signInResult.user);
         const res = await fetch('/api/members.add', {

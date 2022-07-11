@@ -9,11 +9,11 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { method } = req;
-  const supportMethod = ['POST'];
+  const supportMethod = ['GET'];
 
   try {
     checkSupportMethod(supportMethod, method);
-    await MemberCtrl.add(req, res);
+    await MemberCtrl.findByScreenName(req, res);
   } catch (error) {
     console.error(error);
     // 에러 처리
