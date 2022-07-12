@@ -1,12 +1,22 @@
-export interface InMessage {
+import { firestore } from 'firebase-admin';
+
+interface InMessageBase {
   id: string;
   message: string;
-  createdAt: string;
   // 댓글 정보
   reply?: string;
-  replyAt?: string;
   author?: {
     displayName: string;
     phothURL?: string;
   };
+}
+
+export interface InMessage extends InMessageBase {
+  createdAt: string;
+  replyAt?: string;
+}
+
+export interface InMessageServer extends InMessageBase {
+  createdAt: firestore.Timestamp;
+  replyAt?: firestore.Timestamp;
 }

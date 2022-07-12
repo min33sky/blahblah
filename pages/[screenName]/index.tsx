@@ -14,11 +14,12 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import ResizeTextarea from 'react-textarea-autosize';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 import { GetServerSideProps } from 'next';
 import axios, { AxiosResponse } from 'axios';
 import MessageItem from '@/components/messageItem';
+import { InMessage } from '@/types/in_message';
 
 interface Props {
   userInfo: InAuthUser | null;
@@ -81,11 +82,31 @@ function UserHomePage({ userInfo }: Props) {
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const { authUser } = useFirebaseAuth();
+  const [messageList, setMessageList] = useState<InMessage[]>([]);
   const toast = useToast();
+
+  const fetchMessageList = async (uid: string) => {
+    try {
+      const resp = await fetch(`/api/messages.list?uid=${uid}`);
+      if (resp.status === 200) {
+        const data = await resp.json();
+        setMessageList(data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (userInfo === null) return;
+    fetchMessageList(userInfo.uid);
+  }, [userInfo]);
 
   if (!userInfo) {
     return <p>사용자가 없습니다.</p>;
   }
+
+  const isOwner = authUser !== null && userInfo.uid === authUser.uid;
 
   return (
     <ServiceLayout
@@ -228,18 +249,17 @@ function UserHomePage({ userInfo }: Props) {
 
         {/* 질문 메세지들 출력 영역 */}
         <VStack spacing={'12px'} mt="6">
-          <MessageItem
-            uid="asdf"
-            displayName="test"
-            photoURL={authUser?.photoURL ?? ''}
-            isOwner={false}
-            item={{
-              id: 'test',
-              message: 'test_asdf',
-              createdAt: '2022-01-31T20:15:55+09:00',
-              reply: 'reply',
-              replyAt: '2022-03-31T20:15:55+09:00',
-            }}
+          {messageList.map((item) => (
+            <MessageItem
+              key={`message-item-${item.id}`}
+              uid={userInfo.uid}
+              displayName={userInfo.displayName ?? ''}
+              photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
+              isOwner={isOwner}
+              item={item}
+            />
+          ))}
+          {/* <MessageItem
           />
           <MessageItem
             uid="asdf"
@@ -251,7 +271,7 @@ function UserHomePage({ userInfo }: Props) {
               message: 'test_asdf',
               createdAt: '2022-02-31T10:15:55+09:00',
             }}
-          />
+          /> */}
         </VStack>
       </Box>
     </ServiceLayout>
@@ -270,6 +290,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
       },
     };
   }
+
   try {
     /**
      *? 서버사이드에선 상대주소만으로는 API요청을 보낼수 없기때문에
