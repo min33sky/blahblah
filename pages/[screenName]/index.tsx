@@ -11,12 +11,14 @@ import {
   Text,
   Textarea,
   useToast,
+  VStack,
 } from '@chakra-ui/react';
 import ResizeTextarea from 'react-textarea-autosize';
 import React, { useState } from 'react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 import { GetServerSideProps } from 'next';
 import axios, { AxiosResponse } from 'axios';
+import MessageItem from '@/components/messageItem';
 
 interface Props {
   userInfo: InAuthUser | null;
@@ -223,6 +225,34 @@ function UserHomePage({ userInfo }: Props) {
             </FormLabel>
           </FormControl>
         </Box>
+
+        {/* 질문 메세지들 출력 영역 */}
+        <VStack spacing={'12px'} mt="6">
+          <MessageItem
+            uid="asdf"
+            displayName="test"
+            photoURL={authUser?.photoURL ?? ''}
+            isOwner={false}
+            item={{
+              id: 'test',
+              message: 'test_asdf',
+              createdAt: '2022-01-31T20:15:55+09:00',
+              reply: 'reply',
+              replyAt: '2022-03-31T20:15:55+09:00',
+            }}
+          />
+          <MessageItem
+            uid="asdf"
+            displayName="test"
+            photoURL={authUser?.photoURL ?? ''}
+            isOwner={true}
+            item={{
+              id: 'test',
+              message: 'test_asdf',
+              createdAt: '2022-02-31T10:15:55+09:00',
+            }}
+          />
+        </VStack>
       </Box>
     </ServiceLayout>
   );
