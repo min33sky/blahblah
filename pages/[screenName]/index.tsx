@@ -75,7 +75,7 @@ async function postMessage({
 
 /**
  * 사용자별 메인 페이지
- * @param userInfo 사용자 정보
+ * @param userInfo 헤당 페이지 소유자의 정보
  * @returns
  */
 function UserHomePage({ userInfo }: Props) {
@@ -97,6 +97,35 @@ function UserHomePage({ userInfo }: Props) {
       console.error(error);
     }
   };
+
+  async function fetchMessageInfo({
+    uid,
+    messageId,
+  }: {
+    uid: string;
+    messageId: string;
+  }) {
+    try {
+      const res = await fetch(
+        `/api/messages.info?uid=${uid}&messageId=${messageId}`
+      );
+      if (res.status < 300) {
+        const data: InMessage = await res.json();
+
+        setMessageList((prev) => {
+          const findIndex = messageList.findIndex((fv) => fv.id === data.id);
+          if (findIndex > 0) {
+            const updateArr = [...prev];
+            updateArr[findIndex] = data;
+            return updateArr;
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   useEffect(() => {
     if (userInfo === null) return;
@@ -213,6 +242,7 @@ function UserHomePage({ userInfo }: Props) {
                 }
 
                 setMessage('');
+                setReFetchTrigger((prev) => !prev);
               }}
             >
               등록
@@ -258,7 +288,9 @@ function UserHomePage({ userInfo }: Props) {
               photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
               isOwner={isOwner}
               item={item}
-              onSendComplete={() => setReFetchTrigger((prev) => !prev)}
+              onSendComplete={() =>
+                fetchMessageInfo({ uid: userInfo.uid, messageId: item.id })
+              }
             />
           ))}
         </VStack>

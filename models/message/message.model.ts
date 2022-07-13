@@ -102,6 +102,48 @@ async function list({ uid }: { uid: string }) {
 }
 
 /**
+ * 메시지 조회
+ * @param uid
+ * @param messageId
+ */
+async function get({ uid, messageId }: { uid: string; messageId: string }) {
+  const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
+  const messageRef = memberRef.collection(MESSAGE_COL).doc(messageId);
+
+  console.log('8888888888888888888888888888888: ', uid, messageId);
+
+  const data = await FirestoreRef.runTransaction(async (transaction) => {
+    const memberDoc = await transaction.get(memberRef);
+    const messageDoc = await transaction.get(messageRef);
+    if (memberDoc.exists === false) {
+      throw new CustomServerError({
+        statusCode: 404,
+        message: '존재하지 않는 사용자',
+      });
+    }
+
+    if (messageDoc.exists === false) {
+      throw new CustomServerError({
+        statusCode: 404,
+        message: '존재하지 않는 메시지',
+      });
+    }
+
+    const messageData = messageDoc.data() as InMessageServer;
+    return {
+      ...messageData,
+      id: messageId,
+      createdAt: messageData.createdAt.toDate().toISOString(),
+      replyAt: messageData.replyAt
+        ? messageData.replyAt.toDate().toISOString
+        : undefined,
+    };
+  });
+
+  return data;
+}
+
+/**
  * 댓글 등록
  * @param uid 메세지를 받을 사람의 uid
  * @param messageId 댓글을 달 메세지의 id
@@ -159,6 +201,7 @@ async function postReply({
 const MessageModel = {
   post,
   list,
+  get,
   postReply,
 };
 

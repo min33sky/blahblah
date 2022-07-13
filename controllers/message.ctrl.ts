@@ -28,6 +28,31 @@ async function list(req: NextApiRequest, res: NextApiResponse) {
 }
 
 /**
+ * 메시지 조회
+ * @param req
+ * @param res
+ * @returns
+ */
+async function get(req: NextApiRequest, res: NextApiResponse) {
+  const { uid, messageId } = req.query;
+  if (uid === undefined) {
+    throw new BadRequestError('uid 누락');
+  }
+  if (messageId === undefined) {
+    throw new BadRequestError('messageId 누락');
+  }
+
+  const arrTostr = (item: any) => (Array.isArray(item) ? item[0] : item);
+
+  const data = await MessageModel.get({
+    uid: arrTostr(uid),
+    messageId: arrTostr(messageId),
+  });
+
+  return res.status(200).json(data);
+}
+
+/**
  * 댓글 달기
  * @param req
  * @param res
@@ -52,6 +77,7 @@ async function postReply(req: NextApiRequest, res: NextApiResponse) {
 const messageCtrl = {
   post,
   list,
+  get,
   postReply,
 };
 
