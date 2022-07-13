@@ -83,6 +83,7 @@ function UserHomePage({ userInfo }: Props) {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const { authUser } = useFirebaseAuth();
   const [messageList, setMessageList] = useState<InMessage[]>([]);
+  const [reFetchTrigger, setReFetchTrigger] = useState(false); //? 댓글 등록시 목록 리패치하는 용도
   const toast = useToast();
 
   const fetchMessageList = async (uid: string) => {
@@ -100,7 +101,7 @@ function UserHomePage({ userInfo }: Props) {
   useEffect(() => {
     if (userInfo === null) return;
     fetchMessageList(userInfo.uid);
-  }, [userInfo]);
+  }, [userInfo, reFetchTrigger]);
 
   if (!userInfo) {
     return <p>사용자가 없습니다.</p>;
@@ -257,21 +258,9 @@ function UserHomePage({ userInfo }: Props) {
               photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
               isOwner={isOwner}
               item={item}
+              onSendComplete={() => setReFetchTrigger((prev) => !prev)}
             />
           ))}
-          {/* <MessageItem
-          />
-          <MessageItem
-            uid="asdf"
-            displayName="test"
-            photoURL={authUser?.photoURL ?? ''}
-            isOwner={true}
-            item={{
-              id: 'test',
-              message: 'test_asdf',
-              createdAt: '2022-02-31T10:15:55+09:00',
-            }}
-          /> */}
         </VStack>
       </Box>
     </ServiceLayout>

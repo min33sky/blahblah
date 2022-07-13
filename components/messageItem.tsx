@@ -10,7 +10,7 @@ import {
   Textarea,
 } from '@chakra-ui/react';
 import ResizeTextArea from 'react-textarea-autosize';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Props {
   uid: string;
@@ -18,9 +18,36 @@ interface Props {
   photoURL: string;
   isOwner: boolean; //? 메시지 작성자만 댓글을 달 수 있다.
   item: InMessage;
+  onSendComplete: () => void;
 }
 
-function MessageItem({ displayName, photoURL, isOwner, item }: Props) {
+function MessageItem({
+  uid,
+  displayName,
+  photoURL,
+  isOwner,
+  item,
+  onSendComplete,
+}: Props) {
+  const [reply, setReply] = useState('');
+
+  const postReply = async () => {
+    const res = await fetch('/api/messages.add.reply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        uid,
+        messageId: item.id,
+        reply,
+      }),
+    });
+
+    setReply('');
+    onSendComplete();
+  };
+
   const haveReply = item.reply !== undefined;
 
   return (
@@ -95,10 +122,14 @@ function MessageItem({ displayName, photoURL, isOwner, item }: Props) {
                     overflow={'hidden'}
                     fontSize="xs"
                     as={ResizeTextArea}
+                    value={reply}
+                    onChange={(e) => setReply(e.currentTarget.value)}
                     placeholder="댓글을 입력하세요..."
                   />
                 </Box>
                 <Button
+                  disabled={reply.length === 0 || reply.trim() === ''}
+                  onClick={postReply}
                   bgColor={'#FF75B5'}
                   colorScheme="pink"
                   variant={'solid'}

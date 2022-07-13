@@ -15,7 +15,7 @@ type MessageBodyType = {
 const MEMBER_COL = 'members';
 const MESSAGE_COL = 'messages';
 const SCREEN_NAMES_COL = 'screen_names';
-const Firestore = FirebaseAdmin.getInstance().Firestore;
+const FirestoreRef = FirebaseAdmin.getInstance().Firestore;
 
 /**
  * 메세지 등록
@@ -34,10 +34,10 @@ async function post({
   };
 }) {
   //? 메시지를 받을 사람의 정보 가져오기
-  const memberRef = Firestore.collection(MEMBER_COL).doc(uid);
+  const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
 
   //? 트랜잭션 적용
-  await Firestore.runTransaction(async (transaction) => {
+  await FirestoreRef.runTransaction(async (transaction) => {
     const memberDoc = await transaction.get(memberRef);
     if (memberDoc.exists === false) {
       throw new CustomServerError({
@@ -57,6 +57,7 @@ async function post({
       createdAt: firestore.FieldValue.serverTimestamp(),
     };
 
+    //? 익명 등록이 아닐 경우 작성자 정보도 등록한다.
     if (author) {
       newMessageBody.author = author;
     }
@@ -68,11 +69,11 @@ async function post({
 
 /**
  * 메세지 목록 가져오기
- * @param uid 메세지를 받는 사람의 아이디
+ * @param uid 메세지들을 받은 사람의 아이디 (해당 홈 주인)
  */
 async function list({ uid }: { uid: string }) {
-  const memberRef = Firestore.collection(MEMBER_COL).doc(uid);
-  const listData = await Firestore.runTransaction(async (transaction) => {
+  const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
+  const listData = await FirestoreRef.runTransaction(async (transaction) => {
     const memberDoc = await transaction.get(memberRef);
     if (memberDoc.exists === false) {
       throw new CustomServerError({
@@ -83,7 +84,7 @@ async function list({ uid }: { uid: string }) {
 
     const messageCol = memberRef.collection(MESSAGE_COL);
     const messageColDoc = await transaction.get(messageCol);
-    const data = messageColDoc.docs.map((mv) => {
+    const result = messageColDoc.docs.map((mv) => {
       const docData = mv.data() as Omit<InMessageServer, 'id'>;
       const returnData = {
         ...docData,
@@ -95,14 +96,70 @@ async function list({ uid }: { uid: string }) {
       };
       return returnData;
     });
-    return data;
+    return result;
   });
   return listData;
+}
+
+/**
+ * 댓글 등록
+ * @param uid 메세지를 받을 사람의 uid
+ * @param messageId 댓글을 달 메세지의 id
+ * @param reply 댓글 내용
+ */
+async function postReply({
+  messageId,
+  reply,
+  uid,
+}: {
+  uid: string;
+  messageId: string;
+  reply: string;
+}) {
+  //? 댓글을 달 메세지와 메세지 작성자가 있는지 확인
+  const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
+  const messageRef = memberRef.collection(MESSAGE_COL).doc(messageId);
+
+  await FirestoreRef.runTransaction(async (transaction) => {
+    const memeberDoc = await transaction.get(memberRef);
+    const messageDoc = await transaction.get(messageRef);
+
+    if (memeberDoc.exists === false) {
+      throw new CustomServerError({
+        statusCode: 404,
+        message: '존재하지 않는 사용자',
+      });
+    }
+
+    if (messageDoc.exists === false) {
+      throw new CustomServerError({
+        statusCode: 404,
+        message: '존재하지 않는 메세지',
+      });
+    }
+
+    const messageData = messageDoc.data() as InMessageServer;
+
+    //? 댓글은 하나만 달 수 있다.
+    if (messageData.reply !== undefined) {
+      throw new CustomServerError({
+        statusCode: 400,
+        message: '이미 댓글을 입력했습니다. :<',
+      });
+    }
+
+    //? 댓글을 등록하기 위해 메세지 정보를 가져와 업데이트한다.
+    await transaction.update(messageRef, {
+      reply,
+      replyAt: firestore.FieldValue.serverTimestamp(),
+    });
+  });
 }
 
 const MessageModel = {
   post,
   list,
+  postReply,
 };
 
 export default MessageModel;

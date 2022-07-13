@@ -27,9 +27,32 @@ async function list(req: NextApiRequest, res: NextApiResponse) {
   return res.status(200).json(messageList);
 }
 
+/**
+ * 댓글 달기
+ * @param req
+ * @param res
+ * @returns
+ */
+async function postReply(req: NextApiRequest, res: NextApiResponse) {
+  const { uid, messageId, reply } = req.body;
+  if (uid === undefined) {
+    throw new BadRequestError('uid 누락');
+  }
+  if (messageId === undefined) {
+    throw new BadRequestError('messageId 누락');
+  }
+  if (reply === undefined) {
+    throw new BadRequestError('reply 누락');
+  }
+
+  await MessageModel.postReply({ uid, messageId, reply });
+  return res.status(201).end();
+}
+
 const messageCtrl = {
   post,
   list,
+  postReply,
 };
 
 export default messageCtrl;
