@@ -114,7 +114,8 @@ function UserHomePage({ userInfo }: Props) {
 
         setMessageList((prev) => {
           const findIndex = messageList.findIndex((fv) => fv.id === data.id);
-          if (findIndex > 0) {
+          console.log('findIndex: ', findIndex);
+          if (findIndex > -1) {
             const updateArr = [...prev];
             updateArr[findIndex] = data;
             return updateArr;

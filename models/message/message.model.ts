@@ -82,7 +82,9 @@ async function list({ uid }: { uid: string }) {
       });
     }
 
-    const messageCol = memberRef.collection(MESSAGE_COL);
+    const messageCol = memberRef
+      .collection(MESSAGE_COL)
+      .orderBy('createdAt', 'desc');
     const messageColDoc = await transaction.get(messageCol);
     const result = messageColDoc.docs.map((mv) => {
       const docData = mv.data() as Omit<InMessageServer, 'id'>;
@@ -109,8 +111,6 @@ async function list({ uid }: { uid: string }) {
 async function get({ uid, messageId }: { uid: string; messageId: string }) {
   const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
   const messageRef = memberRef.collection(MESSAGE_COL).doc(messageId);
-
-  console.log('8888888888888888888888888888888: ', uid, messageId);
 
   const data = await FirestoreRef.runTransaction(async (transaction) => {
     const memberDoc = await transaction.get(memberRef);
