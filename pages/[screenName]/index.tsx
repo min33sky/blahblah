@@ -20,6 +20,7 @@ import { GetServerSideProps } from 'next';
 import axios, { AxiosResponse } from 'axios';
 import MessageItem from '@/components/messageItem';
 import { InMessage } from '@/types/in_message';
+import { TriangleDownIcon } from '@chakra-ui/icons';
 
 interface Props {
   userInfo: InAuthUser | null;
@@ -83,21 +84,16 @@ function UserHomePage({ userInfo }: Props) {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const { authUser } = useFirebaseAuth();
   const [messageList, setMessageList] = useState<InMessage[]>([]);
-  const [reFetchTrigger, setReFetchTrigger] = useState(false); //? 댓글 등록시 목록 리패치하는 용도
+  const [reFetchTrigger, setReFetchTrigger] = useState(false); //? 메시지 목록 리패치
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const toast = useToast();
 
-  const fetchMessageList = async (uid: string) => {
-    try {
-      const resp = await fetch(`/api/messages.list?uid=${uid}`);
-      if (resp.status === 200) {
-        const data = await resp.json();
-        setMessageList(data);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
+  /**
+   * 단일 메시지 정보를 가져오기
+   * @param uid
+   * @param messageId
+   */
   async function fetchMessageInfo({
     uid,
     messageId,
@@ -109,12 +105,16 @@ function UserHomePage({ userInfo }: Props) {
       const res = await fetch(
         `/api/messages.info?uid=${uid}&messageId=${messageId}`
       );
+
+      /**
+       *? 메시지 정보를 가져오는데 성공할 경우
+       *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
+       */
       if (res.status < 300) {
         const data: InMessage = await res.json();
 
         setMessageList((prev) => {
           const findIndex = messageList.findIndex((fv) => fv.id === data.id);
-          console.log('findIndex: ', findIndex);
           if (findIndex > -1) {
             const updateArr = [...prev];
             updateArr[findIndex] = data;
@@ -130,13 +130,41 @@ function UserHomePage({ userInfo }: Props) {
 
   useEffect(() => {
     if (userInfo === null) return;
+
+    const fetchMessageList = async (uid: string) => {
+      try {
+        const resp = await fetch(
+          `/api/messages.list?uid=${uid}&page=${page}&size=3`
+        );
+        if (resp.status === 200) {
+          const data: {
+            totalElements: number;
+            totalPages: number;
+            page: number;
+            size: number;
+            content: InMessage[];
+          } = await resp.json();
+
+          setTotalPages(data.totalPages);
+          if (page === 1) {
+            setMessageList(data.content);
+          } else {
+            setMessageList((prev) => [...prev, ...data.content]);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
     fetchMessageList(userInfo.uid);
-  }, [userInfo, reFetchTrigger]);
+  }, [page, userInfo, reFetchTrigger]);
 
   if (!userInfo) {
     return <p>사용자가 없습니다.</p>;
   }
 
+  //? 해당 사용자의 홈의 주인인지 확인 (댓글을 달수있는 사람)
   const isOwner = authUser !== null && userInfo.uid === authUser.uid;
 
   return (
@@ -242,6 +270,7 @@ function UserHomePage({ userInfo }: Props) {
                   toast({ title: '메시지 등록 실패', position: 'top-right' });
                 }
 
+                //* 입력 폼 초기화 & 목록 다시 불러오기
                 setMessage('');
                 setReFetchTrigger((prev) => !prev);
               }}
@@ -295,6 +324,19 @@ function UserHomePage({ userInfo }: Props) {
             />
           ))}
         </VStack>
+
+        {/* 더보기 버튼 */}
+        {totalPages > page && (
+          <Button
+            width={'full'}
+            mt="2"
+            fontSize={'sm'}
+            leftIcon={<TriangleDownIcon />}
+            onClick={() => setPage((prev) => prev + 1)}
+          >
+            더보기
+          </Button>
+        )}
       </Box>
     </ServiceLayout>
   );
@@ -325,7 +367,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     const userInfoResponse: AxiosResponse<InAuthUser> = await axios.get(
       `${baseURL}/api/user.info/${screenName}`
     );
-    // console.log('UserINFO: ', userInfoResponse);
     return {
       props: {
         userInfo: userInfoResponse.data ?? null,

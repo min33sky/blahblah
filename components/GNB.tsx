@@ -24,7 +24,6 @@ function GNB() {
   );
 
   const authInitialized = loading || authUser === null;
-  console.log('ㅎㅎㅎㅎ: ', authUser, authInitialized);
 
   return (
     <Box

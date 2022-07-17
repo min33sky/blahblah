@@ -45,7 +45,7 @@ function MessageItem({
     });
 
     setReply('');
-    onSendComplete();
+    onSendComplete(); //? 답글을 단 메시지의 정보를 업데이트해서 화면에 보여준다.
   };
 
   const haveReply = item.reply !== undefined;
