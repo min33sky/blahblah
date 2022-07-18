@@ -9,6 +9,8 @@ interface InMessageBase {
     displayName: string;
     phothURL?: string;
   };
+  // 비공개 여부
+  deny?: boolean;
 }
 
 export interface InMessage extends InMessageBase {

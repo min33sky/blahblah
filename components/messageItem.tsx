@@ -14,10 +14,12 @@ import {
   Spacer,
   Text,
   Textarea,
+  useToast,
 } from '@chakra-ui/react';
 import ResizeTextArea from 'react-textarea-autosize';
 import React, { useState } from 'react';
 import MoreBtnIcon from './MoreBtnIcon';
+import FirebaseAuthClient from '@/models/firebase_auth_client';
 
 interface Props {
   uid: string;
@@ -37,6 +39,7 @@ function MessageItem({
   onSendComplete,
 }: Props) {
   const [reply, setReply] = useState('');
+  const toast = useToast();
 
   const postReply = async () => {
     const res = await fetch('/api/messages.add.reply', {
@@ -55,9 +58,36 @@ function MessageItem({
     onSendComplete(); //? 답글을 단 메시지의 정보를 업데이트해서 화면에 보여준다.
   };
 
+  const updateMessage = async ({ deny }: { deny: boolean }) => {
+    const token =
+      await FirebaseAuthClient.getInstance().Auth.currentUser?.getIdToken();
+    if (token === undefined) {
+      return toast({
+        title: '로그인한 사용자만 사용할 수 있는 메뉴입니다.',
+      });
+    }
+
+    const resp = await fetch('/api/messages.deny', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        authorization: token,
+      },
+      body: JSON.stringify({
+        uid,
+        messageId: item.id,
+        deny,
+      }),
+    });
+
+    if (resp.status < 300) {
+      onSendComplete();
+    }
+  };
+
   const haveReply = item.reply !== undefined;
 
-  console.log('시발');
+  console.log('시발', uid);
 
   return (
     <Box borderRadius={'md'} width="full" bg={'white'} boxShadow="md">
@@ -90,7 +120,13 @@ function MessageItem({
                 variant="link"
               />
               <MenuList>
-                <MenuItem>비공개 처리</MenuItem>
+                <MenuItem
+                  onClick={() =>
+                    updateMessage({ deny: item.deny ? false : true })
+                  }
+                >
+                  {item.deny ? '비공개 처리 해제' : '비공개 처리'}
+                </MenuItem>
               </MenuList>
             </Menu>
           )}

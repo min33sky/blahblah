@@ -141,40 +141,44 @@ async function updateMessage({
 }
 
 /**
+ * !Deprecated
  * 메세지 목록 가져오기
  * @param uid 메세지들을 받은 사람의 아이디 (해당 홈 주인)
  */
-async function list({ uid }: { uid: string }) {
-  const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
-  const listData = await FirestoreRef.runTransaction(async (transaction) => {
-    const memberDoc = await transaction.get(memberRef);
-    if (memberDoc.exists === false) {
-      throw new CustomServerError({
-        statusCode: 404,
-        message: '존재하지 않는 사용자입니다.',
-      });
-    }
+// async function list({ uid }: { uid: string }) {
+//   const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
+//   const listData = await FirestoreRef.runTransaction(async (transaction) => {
+//     const memberDoc = await transaction.get(memberRef);
+//     if (memberDoc.exists === false) {
+//       throw new CustomServerError({
+//         statusCode: 404,
+//         message: '존재하지 않는 사용자입니다.',
+//       });
+//     }
 
-    const messageCol = memberRef
-      .collection(MESSAGE_COL)
-      .orderBy('createdAt', 'desc');
-    const messageColDoc = await transaction.get(messageCol);
-    const result = messageColDoc.docs.map((mv) => {
-      const docData = mv.data() as Omit<InMessageServer, 'id'>;
-      const returnData = {
-        ...docData,
-        id: mv.id,
-        createdAt: docData.createdAt.toDate().toISOString(),
-        replyAt: docData.replyAt
-          ? docData.replyAt.toDate().toISOString
-          : undefined,
-      };
-      return returnData;
-    });
-    return result;
-  });
-  return listData;
-}
+//     const messageCol = memberRef
+//       .collection(MESSAGE_COL)
+//       .orderBy('createdAt', 'desc');
+
+//     const messageColDoc = await transaction.get(messageCol);
+
+//     const result = messageColDoc.docs.map((mv) => {
+//       const docData = mv.data() as Omit<InMessageServer, 'id'>;
+//       const returnData = {
+//         ...docData,
+//         id: mv.id,
+//         message: docData.deny ? '비공개된 메시지입니다.' : docData.message,
+//         createdAt: docData.createdAt.toDate().toISOString(),
+//         replyAt: docData.replyAt
+//           ? docData.replyAt.toDate().toISOString
+//           : undefined,
+//       };
+//       return returnData;
+//     });
+//     return result;
+//   });
+//   return listData;
+// }
 
 async function listWithPage({
   uid,
@@ -226,6 +230,7 @@ async function listWithPage({
       const returnData = {
         ...docData,
         id: mv.id,
+        message: docData.deny ? '비공개 처리된 메시지입니다.' : docData.message,
         createdAt: docData.createdAt.toDate().toISOString(),
         replyAt: docData.replyAt
           ? docData.replyAt.toDate().toISOString
@@ -274,6 +279,9 @@ async function get({ uid, messageId }: { uid: string; messageId: string }) {
     return {
       ...messageData,
       id: messageId,
+      message: messageData.deny
+        ? '비공개 처리된 메시지입니다.'
+        : messageData.message,
       createdAt: messageData.createdAt.toDate().toISOString(),
       replyAt: messageData.replyAt
         ? messageData.replyAt.toDate().toISOString
@@ -342,7 +350,6 @@ async function postReply({
 const MessageModel = {
   post,
   updateMessage,
-  list,
   listWithPage,
   get,
   postReply,
