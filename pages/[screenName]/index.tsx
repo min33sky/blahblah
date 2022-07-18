@@ -21,6 +21,7 @@ import axios, { AxiosResponse } from 'axios';
 import MessageItem from '@/components/messageItem';
 import { InMessage } from '@/types/in_message';
 import { TriangleDownIcon } from '@chakra-ui/icons';
+import { useQuery } from 'react-query';
 
 interface Props {
   userInfo: InAuthUser | null;
@@ -89,6 +90,37 @@ function UserHomePage({ userInfo }: Props) {
   const [totalPages, setTotalPages] = useState(1);
   const toast = useToast();
 
+  const messageListQueryKey = [
+    'messageList',
+    userInfo?.uid,
+    page,
+    reFetchTrigger,
+  ];
+
+  useQuery(
+    messageListQueryKey,
+    async () =>
+      await axios.get<{
+        totalElements: number;
+        totalPages: number;
+        page: number;
+        size: number;
+        content: InMessage[];
+      }>(`/api/messages.list?uid=${userInfo?.uid}&page=${page}&size=10`),
+    {
+      keepPreviousData: true,
+      onSuccess: (data) => {
+        setTotalPages(data.data.totalPages);
+        if (page === 1) {
+          setMessageList([...data.data.content]);
+          return;
+        }
+        setMessageList((prev) => [...prev, ...data.data.content]);
+        console.log('totlaPages: ', data.data);
+      },
+    }
+  );
+
   /**
    * 단일 메시지 정보를 가져오기
    * @param uid
@@ -128,37 +160,37 @@ function UserHomePage({ userInfo }: Props) {
     }
   }
 
-  useEffect(() => {
-    if (userInfo === null) return;
+  // useEffect(() => {
+  //   if (userInfo === null) return;
 
-    const fetchMessageList = async (uid: string) => {
-      try {
-        const resp = await fetch(
-          `/api/messages.list?uid=${uid}&page=${page}&size=3`
-        );
-        if (resp.status === 200) {
-          const data: {
-            totalElements: number;
-            totalPages: number;
-            page: number;
-            size: number;
-            content: InMessage[];
-          } = await resp.json();
+  //   const fetchMessageList = async (uid: string) => {
+  //     try {
+  //       const resp = await fetch(
+  //         `/api/messages.list?uid=${uid}&page=${page}&size=3`
+  //       );
+  //       if (resp.status === 200) {
+  //         const data: {
+  //           totalElements: number;
+  //           totalPages: number;
+  //           page: number;
+  //           size: number;
+  //           content: InMessage[];
+  //         } = await resp.json();
 
-          setTotalPages(data.totalPages);
-          if (page === 1) {
-            setMessageList(data.content);
-          } else {
-            setMessageList((prev) => [...prev, ...data.content]);
-          }
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
+  //         setTotalPages(data.totalPages);
+  //         if (page === 1) {
+  //           setMessageList(data.content);
+  //         } else {
+  //           setMessageList((prev) => [...prev, ...data.content]);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   };
 
-    fetchMessageList(userInfo.uid);
-  }, [page, userInfo, reFetchTrigger]);
+  //   fetchMessageList(userInfo.uid);
+  // }, [page, userInfo, reFetchTrigger]);
 
   if (!userInfo) {
     return <p>사용자가 없습니다.</p>;
@@ -272,7 +304,10 @@ function UserHomePage({ userInfo }: Props) {
 
                 //* 입력 폼 초기화 & 목록 다시 불러오기
                 setMessage('');
-                setReFetchTrigger((prev) => !prev);
+                setPage(1);
+                setTimeout(() => {
+                  setReFetchTrigger((prev) => !prev);
+                }, 50);
               }}
             >
               등록
