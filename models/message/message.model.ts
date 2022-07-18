@@ -87,6 +87,60 @@ async function post({
 }
 
 /**
+ * 메시지 거절 여부를 업데이트 하는 함수
+ * @param uid
+ * @param messageId
+ * @param deny
+ * @returns
+ */
+async function updateMessage({
+  deny,
+  messageId,
+  uid,
+}: {
+  uid: string;
+  messageId: string;
+  deny: boolean;
+}) {
+  const memberRef = FirestoreRef.collection(MEMBER_COL).doc(uid);
+  const messageRef = memberRef.collection(MESSAGE_COL).doc(messageId);
+  const result = await FirestoreRef.runTransaction(async (transaction) => {
+    const memberDoc = await transaction.get(memberRef);
+    const messageDoc = await transaction.get(messageRef);
+
+    if (memberDoc.exists === false) {
+      throw new CustomServerError({
+        statusCode: 404,
+        message: '존재하지 않는 사용자',
+      });
+    }
+
+    if (messageDoc.exists === false) {
+      throw new CustomServerError({
+        statusCode: 404,
+        message: '존재하지 않는 메시지',
+      });
+    }
+
+    //? 메시지 거절 여부 업데이트
+    await transaction.update(messageRef, { deny });
+
+    // 사용자에게 데이터 리턴
+    const messageData = messageDoc.data() as InMessageServer;
+    return {
+      ...messageData,
+      id: messageId,
+      deny,
+      createdAt: messageData.createdAt.toDate().toISOString(),
+      replyAt: messageData.replyAt
+        ? messageData.replyAt.toDate().toISOString
+        : undefined,
+    };
+  });
+  return result;
+}
+
+/**
  * 메세지 목록 가져오기
  * @param uid 메세지들을 받은 사람의 아이디 (해당 홈 주인)
  */
@@ -287,6 +341,7 @@ async function postReply({
 
 const MessageModel = {
   post,
+  updateMessage,
   list,
   listWithPage,
   get,

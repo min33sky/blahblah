@@ -128,6 +128,7 @@ function UserHomePage({ userInfo }: Props) {
    */
   const fetchMessageInfo = useCallback(
     (uid: string, messageId: string) => async () => {
+      console.log('111');
       try {
         const res = await fetch(
           `/api/messages.info?uid=${uid}&messageId=${messageId}`
@@ -156,6 +157,10 @@ function UserHomePage({ userInfo }: Props) {
     },
     [messageList]
   );
+
+  const test = useCallback(() => {
+    return () => {};
+  }, []);
 
   // useEffect(() => {
   //   if (userInfo === null) return;

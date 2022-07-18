@@ -6,11 +6,18 @@ import {
   Button,
   Divider,
   Flex,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Spacer,
   Text,
   Textarea,
 } from '@chakra-ui/react';
 import ResizeTextArea from 'react-textarea-autosize';
 import React, { useState } from 'react';
+import MoreBtnIcon from './MoreBtnIcon';
 
 interface Props {
   uid: string;
@@ -68,8 +75,25 @@ function MessageItem({
             {item?.author ? item.author.displayName : 'anonymous'}&nbsp;
           </Text>
           <Text whiteSpace={'pre-line'} fontSize="xx-small" color={'gray.500'}>
-            1일
+            {convertDateToString(item.createdAt)}
           </Text>
+          <Spacer />
+          {isOwner && (
+            <Menu>
+              <MenuButton
+                as={IconButton}
+                icon={<MoreBtnIcon />}
+                width="24px"
+                height="24px"
+                borderRadius="full"
+                size="xs"
+                variant="link"
+              />
+              <MenuList>
+                <MenuItem>비공개 처리</MenuItem>
+              </MenuList>
+            </Menu>
+          )}
         </Flex>
       </Box>
       <Box p={'2'}>
