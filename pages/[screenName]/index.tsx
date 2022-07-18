@@ -14,7 +14,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import ResizeTextarea from 'react-textarea-autosize';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 import { GetServerSideProps } from 'next';
 import axios, { AxiosResponse } from 'axios';
@@ -126,39 +126,36 @@ function UserHomePage({ userInfo }: Props) {
    * @param uid
    * @param messageId
    */
-  async function fetchMessageInfo({
-    uid,
-    messageId,
-  }: {
-    uid: string;
-    messageId: string;
-  }) {
-    try {
-      const res = await fetch(
-        `/api/messages.info?uid=${uid}&messageId=${messageId}`
-      );
+  const fetchMessageInfo = useCallback(
+    (uid: string, messageId: string) => async () => {
+      try {
+        const res = await fetch(
+          `/api/messages.info?uid=${uid}&messageId=${messageId}`
+        );
 
-      /**
-       *? 메시지 정보를 가져오는데 성공할 경우
-       *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
-       */
-      if (res.status < 300) {
-        const data: InMessage = await res.json();
+        /**
+         *? 메시지 정보를 가져오는데 성공할 경우
+         *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
+         */
+        if (res.status < 300) {
+          const data: InMessage = await res.json();
 
-        setMessageList((prev) => {
-          const findIndex = messageList.findIndex((fv) => fv.id === data.id);
-          if (findIndex > -1) {
-            const updateArr = [...prev];
-            updateArr[findIndex] = data;
-            return updateArr;
-          }
-          return prev;
-        });
+          setMessageList((prev) => {
+            const findIndex = messageList.findIndex((fv) => fv.id === data.id);
+            if (findIndex > -1) {
+              const updateArr = [...prev];
+              updateArr[findIndex] = data;
+              return updateArr;
+            }
+            return prev;
+          });
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
-    }
-  }
+    },
+    [messageList]
+  );
 
   // useEffect(() => {
   //   if (userInfo === null) return;
@@ -353,9 +350,7 @@ function UserHomePage({ userInfo }: Props) {
               photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
               isOwner={isOwner}
               item={item}
-              onSendComplete={() =>
-                fetchMessageInfo({ uid: userInfo.uid, messageId: item.id })
-              }
+              onSendComplete={fetchMessageInfo(userInfo.uid, item.id)}
             />
           ))}
         </VStack>

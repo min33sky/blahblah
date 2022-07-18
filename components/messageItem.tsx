@@ -50,6 +50,8 @@ function MessageItem({
 
   const haveReply = item.reply !== undefined;
 
+  console.log('시발');
+
   return (
     <Box borderRadius={'md'} width="full" bg={'white'} boxShadow="md">
       <Box>
@@ -146,4 +148,4 @@ function MessageItem({
   );
 }
 
-export default MessageItem;
+export default React.memo(MessageItem);
