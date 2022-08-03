@@ -20,10 +20,12 @@ import ResizeTextArea from 'react-textarea-autosize';
 import React, { useState } from 'react';
 import MoreBtnIcon from './MoreBtnIcon';
 import FirebaseAuthClient from '@/models/firebase_auth_client';
+import { useRouter } from 'next/router';
 
 interface Props {
   uid: string;
   displayName: string;
+  screenName: string;
   photoURL: string;
   isOwner: boolean; //? 메시지 작성자만 댓글을 달 수 있다.
   item: InMessage;
@@ -36,9 +38,11 @@ function MessageItem({
   photoURL,
   isOwner,
   item,
+  screenName,
   onSendComplete,
 }: Props) {
   const [reply, setReply] = useState('');
+  const router = useRouter();
   const toast = useToast();
 
   const postReply = async () => {
@@ -87,8 +91,6 @@ function MessageItem({
 
   const haveReply = item.reply !== undefined;
 
-  console.log('시발', uid);
-
   return (
     <Box borderRadius={'md'} width="full" bg={'white'} boxShadow="md">
       <Box>
@@ -126,6 +128,11 @@ function MessageItem({
                   }
                 >
                   {item.deny ? '비공개 처리 해제' : '비공개 처리'}
+                </MenuItem>
+                <MenuItem
+                  onClick={() => router.push(`/${screenName}/${item.id}`)}
+                >
+                  메시지 상세 보기
                 </MenuItem>
               </MenuList>
             </Menu>

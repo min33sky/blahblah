@@ -25,6 +25,7 @@ import { useQuery } from 'react-query';
 
 interface Props {
   userInfo: InAuthUser | null;
+  screenName: string;
 }
 
 /**
@@ -80,7 +81,7 @@ async function postMessage({
  * @param userInfo 헤당 페이지 소유자의 정보
  * @returns
  */
-function UserHomePage({ userInfo }: Props) {
+function UserHomePage({ userInfo, screenName }: Props) {
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const { authUser } = useFirebaseAuth();
@@ -353,6 +354,7 @@ function UserHomePage({ userInfo }: Props) {
               uid={userInfo.uid}
               displayName={userInfo.displayName ?? ''}
               photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
+              screenName={screenName}
               isOwner={isOwner}
               item={item}
               onSendComplete={fetchMessageInfo(userInfo.uid, item.id)}
@@ -382,10 +384,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
 }) => {
   const { screenName } = query;
 
+  const checkScreenName = (name: any) => (Array.isArray(name) ? name[0] : name);
+
   if (screenName === undefined) {
     return {
       props: {
         userInfo: null,
+        screenName,
       },
     };
   }
@@ -405,6 +410,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     return {
       props: {
         userInfo: userInfoResponse.data ?? null,
+        screenName: checkScreenName(screenName),
       },
     };
   } catch (error) {
@@ -412,6 +418,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     return {
       props: {
         userInfo: null,
+        screenName: checkScreenName(screenName),
       },
     };
   }

@@ -110,6 +110,7 @@ function MessagePage({
           uid={userInfo.uid}
           displayName={userInfo.displayName ?? ''}
           photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
+          screenName={screenName}
           isOwner={isOwner}
           item={messageData}
           onSendComplete={fetchMessageInfo(userInfo.uid, messageData.id)}
