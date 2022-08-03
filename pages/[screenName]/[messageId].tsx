@@ -1,31 +1,21 @@
 import ServiceLayout from '@/components/containers/service_layout';
 import { InAuthUser } from '@/types/in_auth_user';
-import {
-  Avatar,
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormLabel,
-  Switch,
-  Text,
-  Textarea,
-  useToast,
-  VStack,
-} from '@chakra-ui/react';
-import ResizeTextarea from 'react-textarea-autosize';
+import { Avatar, Box, Button, Flex, Text, useToast } from '@chakra-ui/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 import { GetServerSideProps } from 'next';
 import axios, { AxiosResponse } from 'axios';
 import MessageItem from '@/components/messageItem';
 import { InMessage } from '@/types/in_message';
-import { TriangleDownIcon } from '@chakra-ui/icons';
+import { ChevronLeftIcon, TriangleDownIcon } from '@chakra-ui/icons';
 import { useQuery } from 'react-query';
+import { messaging } from 'firebase-admin';
+import Link from 'next/link';
 
 interface Props {
   userInfo: InAuthUser | null;
   messageData: InMessage | null;
+  screenName: string;
 }
 
 /**
@@ -33,8 +23,11 @@ interface Props {
  * @param userInfo 헤당 페이지 소유자의 정보
  * @returns
  */
-function MessagePage({ userInfo, messageData: initMessageData }: Props) {
-  const [isAnonymous, setIsAnonymous] = useState(true);
+function MessagePage({
+  screenName,
+  userInfo,
+  messageData: initMessageData,
+}: Props) {
   const [messageData, setMessageData] = useState<InMessage | null>(
     initMessageData
   );
@@ -85,6 +78,14 @@ function MessagePage({ userInfo, messageData: initMessageData }: Props) {
       boxProps={{ backgroundColor: 'gray.50', minH: '100vh' }}
     >
       <Box maxW={'md'} mx="auto" pt={'6'}>
+        <Link href={`/${screenName}`}>
+          <a>
+            <Button leftIcon={<ChevronLeftIcon />} mb="2" fontSize="sm">
+              {screenName} 홈으로
+            </Button>
+          </a>
+        </Link>
+
         <Box
           borderWidth={'1px'}
           borderRadius="lg"
@@ -123,20 +124,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
 }) => {
   const { screenName, messageId } = query;
 
-  if (screenName === undefined) {
-    return {
-      props: {
-        userInfo: null,
-        messageData: null,
-      },
-    };
-  }
+  const checkScreenName = (name: any) => (Array.isArray(name) ? name[0] : name);
 
-  if (messageId === undefined) {
+  if (screenName === undefined || messaging === undefined) {
     return {
       props: {
         userInfo: null,
         messageData: null,
+        screenName,
       },
     };
   }
@@ -162,6 +157,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
         props: {
           userInfo: null,
           messageData: null,
+          screenName: checkScreenName(screenName),
         },
       };
     }
@@ -178,6 +174,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
           messageInfoResponse.data === undefined
             ? null
             : messageInfoResponse.data,
+        screenName: checkScreenName(screenName),
       },
     };
   } catch (error) {
@@ -186,6 +183,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
       props: {
         userInfo: null,
         messageData: null,
+        screenName,
       },
     };
   }
