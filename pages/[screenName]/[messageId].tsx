@@ -1,6 +1,6 @@
 import ServiceLayout from '@/components/containers/service_layout';
 import { InAuthUser } from '@/types/in_auth_user';
-import { Avatar, Box, Button, Flex, Text, useToast } from '@chakra-ui/react';
+import { Avatar, Box, Button, Flex, Text } from '@chakra-ui/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import useFirebaseAuth from '@/hooks/useFirebaseAuth';
 import { GetServerSideProps } from 'next';
@@ -19,8 +19,7 @@ interface Props {
 }
 
 /**
- * 사용자별 메인 페이지
- * @param userInfo 헤당 페이지 소유자의 정보
+ * 메세지 상세 페이지
  * @returns
  */
 function MessagePage({
@@ -32,7 +31,6 @@ function MessagePage({
     initMessageData
   );
   const { authUser } = useFirebaseAuth();
-  const toast = useToast();
 
   /**
    * 단일 메시지 정보를 가져오기
@@ -50,7 +48,7 @@ function MessagePage({
          *? 메시지 정보를 가져오는데 성공할 경우
          *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
          */
-        if (res.status === 300) {
+        if (res.status === 200) {
           const data: InMessage = await res.json();
           setMessageData(data);
         }
