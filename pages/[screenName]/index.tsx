@@ -91,6 +91,8 @@ function UserHomePage({ userInfo, screenName }: Props) {
   const [totalPages, setTotalPages] = useState(1);
   const toast = useToast();
 
+  console.log('#### userInfo, screenName: ', userInfo, screenName);
+
   const messageListQueryKey = [
     'messageList',
     userInfo?.uid,
@@ -400,6 +402,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
     const userInfoResponse: AxiosResponse<InAuthUser> = await axios.get(
       `${baseURL}/api/user.info/${screenName}`
     );
+
+    console.log('screenName: ', screenName);
+    console.log('baseUrl: ', baseURL);
+
     return {
       props: {
         userInfo: userInfoResponse.data ?? null,
