@@ -127,41 +127,34 @@ function UserHomePage({ userInfo, screenName }: Props) {
    * @param uid
    * @param messageId
    */
-  const fetchMessageInfo = useCallback(
-    (uid: string, messageId: string) => async () => {
-      console.log('111');
-      try {
-        const res = await fetch(
-          `/api/messages.info?uid=${uid}&messageId=${messageId}`
-        );
+  const fetchMessageInfo = (uid: string, messageId: string) => async () => {
+    console.log('111');
+    try {
+      const res = await fetch(
+        `/api/messages.info?uid=${uid}&messageId=${messageId}`
+      );
 
-        /**
-         *? 메시지 정보를 가져오는데 성공할 경우
-         *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
-         */
-        if (res.status < 300) {
-          const data: InMessage = await res.json();
+      /**
+       *? 메시지 정보를 가져오는데 성공할 경우
+       *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
+       */
+      if (res.status < 300) {
+        const data: InMessage = await res.json();
 
-          setMessageList((prev) => {
-            const findIndex = messageList.findIndex((fv) => fv.id === data.id);
-            if (findIndex > -1) {
-              const updateArr = [...prev];
-              updateArr[findIndex] = data;
-              return updateArr;
-            }
-            return prev;
-          });
-        }
-      } catch (error) {
-        console.error(error);
+        setMessageList((prev) => {
+          const findIndex = messageList.findIndex((fv) => fv.id === data.id);
+          if (findIndex > -1) {
+            const updateArr = [...prev];
+            updateArr[findIndex] = data;
+            return updateArr;
+          }
+          return prev;
+        });
       }
-    },
-    [messageList]
-  );
-
-  const test = useCallback(() => {
-    return () => {};
-  }, []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   // useEffect(() => {
   //   if (userInfo === null) return;

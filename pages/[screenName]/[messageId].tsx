@@ -40,27 +40,24 @@ function MessagePage({
    * @param uid
    * @param messageId
    */
-  const fetchMessageInfo = useCallback(
-    (uid: string, messageId: string) => async () => {
-      try {
-        const res = await fetch(
-          `/api/messages.info?uid=${uid}&messageId=${messageId}`
-        );
+  const fetchMessageInfo = (uid: string, messageId: string) => async () => {
+    try {
+      const res = await fetch(
+        `/api/messages.info?uid=${uid}&messageId=${messageId}`
+      );
 
-        /**
-         *? 메시지 정보를 가져오는데 성공할 경우
-         *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
-         */
-        if (res.status === 200) {
-          const data: InMessage = await res.json();
-          setMessageData(data);
-        }
-      } catch (error) {
-        console.error(error);
+      /**
+       *? 메시지 정보를 가져오는데 성공할 경우
+       *? 메시지목록에서 해당 메시지를 찾아 업데이트한다.
+       */
+      if (res.status === 200) {
+        const data: InMessage = await res.json();
+        setMessageData(data);
       }
-    },
-    []
-  );
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   if (!userInfo) {
     return <p>사용자가 없습니다.</p>;
