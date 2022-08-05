@@ -11,11 +11,13 @@ import { ChevronLeftIcon, TriangleDownIcon } from '@chakra-ui/icons';
 import { useQuery } from 'react-query';
 import { messaging } from 'firebase-admin';
 import Link from 'next/link';
+import Head from 'next/head';
 
 interface Props {
   userInfo: InAuthUser | null;
   messageData: InMessage | null;
   screenName: string;
+  baseUrl: string;
 }
 
 /**
@@ -26,6 +28,7 @@ function MessagePage({
   screenName,
   userInfo,
   messageData: initMessageData,
+  baseUrl,
 }: Props) {
   const [messageData, setMessageData] = useState<InMessage | null>(
     initMessageData
@@ -69,52 +72,67 @@ function MessagePage({
 
   //? 해당 사용자의 홈의 주인인지 확인 (댓글을 달수있는 사람)
   const isOwner = authUser !== null && userInfo.uid === authUser.uid;
+  const metaImgUrl = `${baseUrl}/open-graph-img?text=${encodeURIComponent(
+    messageData.message
+  )}`;
+  const thumgbnailImgUrl = `${baseUrl}/api/thumbnail?url=${encodeURIComponent(
+    metaImgUrl
+  )}`;
 
   return (
-    <ServiceLayout
-      title={`${userInfo.displayName}의 홈`}
-      boxProps={{ backgroundColor: 'gray.50', minH: '100vh' }}
-    >
-      <Box maxW={'md'} mx="auto" pt={'6'}>
-        <Link href={`/${screenName}`}>
-          <a>
-            <Button leftIcon={<ChevronLeftIcon />} mb="2" fontSize="sm">
-              {screenName} 홈으로
-            </Button>
-          </a>
-        </Link>
+    <>
+      <Head>
+        <meta property="og:image" content={thumgbnailImgUrl}></meta>
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="blahblah" />
+        <meta name="twitter:title" content={messageData.message} />
+        <meta name="twitter:image" content={thumgbnailImgUrl} />
+      </Head>
+      <ServiceLayout
+        title={`${userInfo.displayName}의 홈`}
+        boxProps={{ backgroundColor: 'gray.50', minH: '100vh' }}
+      >
+        <Box maxW={'md'} mx="auto" pt={'6'}>
+          <Link href={`/${screenName}`}>
+            <a>
+              <Button leftIcon={<ChevronLeftIcon />} mb="2" fontSize="sm">
+                {screenName} 홈으로
+              </Button>
+            </a>
+          </Link>
 
-        <Box
-          borderWidth={'1px'}
-          borderRadius="lg"
-          overflow={'hidden'}
-          mb="2"
-          bg={'white'}
-        >
-          <Flex p={'6'}>
-            <Avatar
-              size={'lg'}
-              src={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
-              mr="2"
-            />
-            <Flex direction={'column'} justify="center">
-              <Text>{userInfo.displayName}</Text>
-              <Text>{userInfo.email}</Text>
+          <Box
+            borderWidth={'1px'}
+            borderRadius="lg"
+            overflow={'hidden'}
+            mb="2"
+            bg={'white'}
+          >
+            <Flex p={'6'}>
+              <Avatar
+                size={'lg'}
+                src={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
+                mr="2"
+              />
+              <Flex direction={'column'} justify="center">
+                <Text>{userInfo.displayName}</Text>
+                <Text>{userInfo.email}</Text>
+              </Flex>
             </Flex>
-          </Flex>
-        </Box>
+          </Box>
 
-        <MessageItem
-          uid={userInfo.uid}
-          displayName={userInfo.displayName ?? ''}
-          photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
-          screenName={screenName}
-          isOwner={isOwner}
-          item={messageData}
-          onSendComplete={fetchMessageInfo(userInfo.uid, messageData.id)}
-        />
-      </Box>
-    </ServiceLayout>
+          <MessageItem
+            uid={userInfo.uid}
+            displayName={userInfo.displayName ?? ''}
+            photoURL={userInfo.photoURL ?? 'https://bit.ly/broken-link'}
+            screenName={screenName}
+            isOwner={isOwner}
+            item={messageData}
+            onSendComplete={fetchMessageInfo(userInfo.uid, messageData.id)}
+          />
+        </Box>
+      </ServiceLayout>
+    </>
   );
 }
 
@@ -131,6 +149,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
         userInfo: null,
         messageData: null,
         screenName,
+        baseUrl: '',
       },
     };
   }
@@ -157,6 +176,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
           userInfo: null,
           messageData: null,
           screenName: checkScreenName(screenName),
+          baseUrl: baseURL,
         },
       };
     }
@@ -174,6 +194,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
             ? null
             : messageInfoResponse.data,
         screenName: checkScreenName(screenName),
+        baseUrl: baseURL,
       },
     };
   } catch (error) {
@@ -183,6 +204,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
         userInfo: null,
         messageData: null,
         screenName,
+        baseUrl: '',
       },
     };
   }

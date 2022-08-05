@@ -7,3 +7,9 @@
   - IAM 및 관리자 메뉴 클릭
   - 서비스 계정 클릭
   - 작업의 컨텍스트 메뉴에서 키관리 클릭후 키추가
+
+## 썸네일 만들기
+
+```bash
+npm install playwright-core chrome-aws-lambda@6
+```
